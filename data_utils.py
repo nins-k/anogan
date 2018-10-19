@@ -1,3 +1,9 @@
+import glob
+import cv2
+import os
+import numpy as np
+
+
 def adjust_length(num, length):
     diff_in_length = length - len(str(num))
     return "0"*diff_in_length + str(num)
@@ -176,3 +182,4 @@ def conv_out(i, k, s, p=None):
         p = int((k-1)/2)
     o = int((i-k + 2*p)/s + 1)
     print(o, p)
+   

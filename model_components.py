@@ -1,3 +1,7 @@
+import numpy as np
+import tensorflow as tf
+
+
 def get_generator_model(z, reuse=False, training_mode=False):
     
     print("\nGenerator:\n")
