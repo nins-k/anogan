@@ -259,8 +259,7 @@ def get_discriminator_model(x, z, reuse=False, training_mode=False, penultimate_
                                 kernel_initializer=dcgan_kernel_initializer
                                )
             xz = tf.layers.batch_normalization(inputs=xz, training=training_mode)
-            xz = tf.nn.leaky_relu(features=xz, alpha=0.2)
-            xz = tf.layers.dropout(inputs=xz, rate=0.5, training=training_mode)
+            xz = tf.sigmoid(xz)
         print("Output shape of {} is {}".format(name, xz.shape))
         
         
