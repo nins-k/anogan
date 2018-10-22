@@ -4,6 +4,21 @@ import os
 import numpy as np
 
 
+def augment(img):
+    
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    h,s,v = cv2.split(hsv)
+    v = np.array(v, dtype=np.int16)
+    v += np.random.randint(low=-40, high=40)
+    v = np.array(np.clip(v, a_min=0, a_max=100), dtype=np.uint8)
+    hsv = cv2.merge((h,s,v))
+    hsv = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    img = cv2.flip(hsv, flipCode=1)
+    
+    return img
+    
+    
+    
 def adjust_length(num, length):
     diff_in_length = length - len(str(num))
     return "0"*diff_in_length + str(num)
@@ -174,7 +189,11 @@ def scale_and_random_crop(file_names, save_dir, scale_size=256, random_crop_rang
 
 
 def load_and_normalize(image_names):
-    return normalize(np.asarray([cv2.imread(name) for name in image_names]))
+    aug_random = np.random.random()
+    if aug_random < 0.5:
+        return normalize(np.asarray([augment(cv2.imread(name)) for name in image_names]))
+    else:
+        return normalize(np.asarray([cv2.imread(name) for name in image_names]))
 
 
 def conv_out(i, k, s, p=None):
