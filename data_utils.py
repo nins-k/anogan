@@ -9,7 +9,7 @@ def augment(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     h,s,v = cv2.split(hsv)
     v = np.array(v, dtype=np.int16)
-    v += np.random.randint(low=-40, high=40)
+    v += np.random.randint(low=-15, high=15)
     v = np.array(np.clip(v, a_min=0, a_max=100), dtype=np.uint8)
     hsv = cv2.merge((h,s,v))
     hsv = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
