@@ -1,3 +1,7 @@
+import numpy as np
+import tensorflow as tf
+
+
 def get_generator_model(z, reuse=False, training_mode=False):
     
     print("\nGenerator:\n")
@@ -68,24 +72,8 @@ def get_generator_model(z, reuse=False, training_mode=False):
                                  
                                  
         # in.shape (64,64,128)
-        # out.shape (128,128,64)
+        # out.shape (128,128,3)
         name='layer_05'
-        with tf.variable_scope(name):
-            z = tf.layers.conv2d_transpose(inputs=z,
-                                           filters=64,
-                                           kernel_size=(5,5),
-                                           strides=(2,2),
-                                           padding='SAME',
-                                           kernel_initializer = dcgan_kernel_initializer
-                                                )
-            z = tf.layers.batch_normalization(inputs=z, training=training_mode)
-            z = tf.nn.leaky_relu(features=z, alpha=0.2)
-            print("Output shape of {} is {}".format(name, z.shape))
-                                 
-                        
-        # in.shape (128,128,64)
-        # out.shape (256,256,3)
-        name='layer_06'
         with tf.variable_scope(name):
             z = tf.layers.conv2d_transpose(inputs=z,
                                            filters=3,
@@ -96,12 +84,12 @@ def get_generator_model(z, reuse=False, training_mode=False):
                                                 )
             z = tf.tanh(z)
             print("Output shape of {} is {}".format(name, z.shape))
-        
+
         
         return z
 
 
-def get_discriminator_model(x, z, reuse=False, training_mode=False, penultimate_layer_units=1024):
+def get_discriminator_model(x, z, reuse=False, training_mode=False, penultimate_layer_units=2048):
     
     '''
     For Real Images:
@@ -110,7 +98,7 @@ def get_discriminator_model(x, z, reuse=False, training_mode=False, penultimate_
     
     For Generated Images:
     Input: G(z), z 
-    Output: Probability of real image
+    Output: Probability of image being real
     '''
     
     print("\nDiscriminator: \n")
@@ -119,35 +107,19 @@ def get_discriminator_model(x, z, reuse=False, training_mode=False, penultimate_
     dcgan_kernel_initializer = tf.random_normal_initializer(mean=0.0, stddev=0.002)
 
     with tf.variable_scope('discriminator', reuse=reuse):
+ 
 
-        # inp.shape (256,256,3)
-        # out.shape (128,128,64)
-        name='x_layer_01'
-        with tf.variable_scope(name):     
-            x = tf.layers.conv2d(inputs=x, 
-                                 filters=64, 
-                                 kernel_size=(5,5), 
-                                 strides=(2,2), 
-                                 padding='SAME', 
-                                 kernel_initializer = dcgan_kernel_initializer
-                             )
-            x = tf.nn.leaky_relu(features=x, alpha=0.2)
-            x = tf.layers.dropout(inputs=x, rate=0.5, training=training_mode)
-            print("Output shape of {} is {}".format(name, x.shape))
-            
-
-        # inp.shape (128,128,64)
+        # inp.shape (128,128,3)
         # out.shape (64,64,128)
         name='x_layer_02'
         with tf.variable_scope(name):     
             x = tf.layers.conv2d(inputs=x, 
-                                 filters=128, 
+                                 filters=128,
                                  kernel_size=(5,5), 
                                  strides=(2,2), 
                                  padding='SAME', 
                                  kernel_initializer = dcgan_kernel_initializer
                              )
-            x = tf.layers.batch_normalization(inputs=x, training=training_mode)
             x = tf.nn.leaky_relu(features=x, alpha=0.2)
             x = tf.layers.dropout(inputs=x, rate=0.5, training=training_mode)
             print("Output shape of {} is {}".format(name, x.shape))
@@ -158,7 +130,7 @@ def get_discriminator_model(x, z, reuse=False, training_mode=False, penultimate_
         name='x_layer_03'
         with tf.variable_scope(name):     
             x = tf.layers.conv2d(inputs=x, 
-                                 filters=256, 
+                                 filters=256,
                                  kernel_size=(5,5), 
                                  strides=(2,2), 
                                  padding='SAME', 
@@ -208,12 +180,12 @@ def get_discriminator_model(x, z, reuse=False, training_mode=False, penultimate_
         
         print("\nInput shape of z is {}".format(z.shape))
         
-        # inp.shape (200)
+        # inp.shape (100)
         # out.shape (1024)
         name='z_layer_01'
         with tf.variable_scope(name):
             z = tf.layers.dense(inputs=z,
-                                units=1024,
+                                units=2048,
                                 kernel_initializer=dcgan_kernel_initializer
                                )
             z = tf.layers.batch_normalization(inputs=z, training=training_mode)
@@ -223,15 +195,15 @@ def get_discriminator_model(x, z, reuse=False, training_mode=False, penultimate_
             
         
     
-        # z inp.shape (1024)
+        # z inp.shape (2048)
         # x inp.shape (8*8*1024)
         # concat[x,z] out.shape ()
         xz = tf.concat([x,z], axis=1)
         print("\nOutput shape of [x,z] concat is {}".format(xz.shape))
         
         
-        # inp.shape (66560)
-        # out.shape (penultimate_layer=1024)
+        # inp.shape (17408)
+        # out.shape (penultimate_layer=2048)
         name='xz_layer_01'
         with tf.variable_scope(name):
             xz = tf.layers.dense(inputs=xz,
@@ -246,7 +218,7 @@ def get_discriminator_model(x, z, reuse=False, training_mode=False, penultimate_
         penultimate_layer = xz
         
         
-        # inp.shape (penultimate_layer=1024)
+        # inp.shape (penultimate_layer=2048)
         # out.shape (1)
         name='xz_layer_02'
         with tf.variable_scope(name):
@@ -255,8 +227,7 @@ def get_discriminator_model(x, z, reuse=False, training_mode=False, penultimate_
                                 kernel_initializer=dcgan_kernel_initializer
                                )
             xz = tf.layers.batch_normalization(inputs=xz, training=training_mode)
-            xz = tf.nn.leaky_relu(features=xz, alpha=0.2)
-            xz = tf.layers.dropout(inputs=xz, rate=0.5, training=training_mode)
+            xz = tf.sigmoid(xz)
         print("Output shape of {} is {}".format(name, xz.shape))
         
         
@@ -282,60 +253,10 @@ def get_encoder_model(x, latent_dimensions, reuse=False, training_mode=False):
 
     with tf.variable_scope('Encoder', reuse=reuse):
         
-        # inp.shape (256,256,3)
-        # out.shape (128,128,16)
-        name='layer_01'
-        with tf.variable_scope(name):     
-            x = tf.layers.conv2d(inputs=x, 
-                                 filters=16, 
-                                 kernel_size=(5,5), 
-                                 strides=(2,2), 
-                                 padding='SAME', 
-                                 kernel_initializer = dcgan_kernel_initializer
-                             )
-            x = tf.layers.batch_normalization(inputs=x, training=training_mode)
-            x = tf.nn.leaky_relu(features=x, alpha=0.2)
-            x = tf.layers.dropout(inputs=x, rate=0.5, training=training_mode)
-            print("Output shape of {} is {}".format(name, x.shape))
-            
-            
-        # inp.shape (128,128,16)
-        # out.shape (64,64,32)
+
+        # inp.shape (128,128,3)
+        # out.shape (64,64,128)
         name='layer_02'
-        with tf.variable_scope(name):     
-            x = tf.layers.conv2d(inputs=x, 
-                                 filters=32, 
-                                 kernel_size=(5,5), 
-                                 strides=(2,2), 
-                                 padding='SAME', 
-                                 kernel_initializer = dcgan_kernel_initializer
-                             )
-            x = tf.layers.batch_normalization(inputs=x, training=training_mode)
-            x = tf.nn.leaky_relu(features=x, alpha=0.2)
-            x = tf.layers.dropout(inputs=x, rate=0.5, training=training_mode)
-            print("Output shape of {} is {}".format(name, x.shape))
-            
-            
-        # inp.shape (64,64,32)
-        # out.shape (32,32,64)
-        name='layer_03'
-        with tf.variable_scope(name):     
-            x = tf.layers.conv2d(inputs=x, 
-                                 filters=64, 
-                                 kernel_size=(5,5), 
-                                 strides=(2,2), 
-                                 padding='SAME', 
-                                 kernel_initializer = dcgan_kernel_initializer
-                             )
-            x = tf.layers.batch_normalization(inputs=x, training=training_mode)
-            x = tf.nn.leaky_relu(features=x, alpha=0.2)
-            x = tf.layers.dropout(inputs=x, rate=0.5, training=training_mode)
-            print("Output shape of {} is {}".format(name, x.shape))
-            
-        
-        # inp.shape (32,32,64)
-        # out.shape (16,16,128)
-        name='layer_04'
         with tf.variable_scope(name):     
             x = tf.layers.conv2d(inputs=x, 
                                  filters=128, 
@@ -349,8 +270,42 @@ def get_encoder_model(x, latent_dimensions, reuse=False, training_mode=False):
             x = tf.layers.dropout(inputs=x, rate=0.5, training=training_mode)
             print("Output shape of {} is {}".format(name, x.shape))
             
+            
+        # inp.shape (64,64,128)
+        # out.shape (32,32,256)
+        name='layer_03'
+        with tf.variable_scope(name):     
+            x = tf.layers.conv2d(inputs=x, 
+                                 filters=256,
+                                 kernel_size=(5,5), 
+                                 strides=(2,2), 
+                                 padding='SAME', 
+                                 kernel_initializer = dcgan_kernel_initializer
+                             )
+            x = tf.layers.batch_normalization(inputs=x, training=training_mode)
+            x = tf.nn.leaky_relu(features=x, alpha=0.2)
+            x = tf.layers.dropout(inputs=x, rate=0.5, training=training_mode)
+            print("Output shape of {} is {}".format(name, x.shape))
+            
         
-        # inp.shape (16,16,128)
+        # inp.shape (32,32,256)
+        # out.shape (16,16,512)
+        name='layer_04'
+        with tf.variable_scope(name):     
+            x = tf.layers.conv2d(inputs=x, 
+                                 filters=512,
+                                 kernel_size=(5,5), 
+                                 strides=(2,2), 
+                                 padding='SAME', 
+                                 kernel_initializer = dcgan_kernel_initializer
+                             )
+            x = tf.layers.batch_normalization(inputs=x, training=training_mode)
+            x = tf.nn.leaky_relu(features=x, alpha=0.2)
+            x = tf.layers.dropout(inputs=x, rate=0.5, training=training_mode)
+            print("Output shape of {} is {}".format(name, x.shape))
+            
+        
+        # inp.shape (16,16,512)
         # out.shape (latent dimesnions)
         name='layer_04'
         with tf.variable_scope(name):     
@@ -364,21 +319,21 @@ def get_encoder_model(x, latent_dimensions, reuse=False, training_mode=False):
         return x
 
 
-def test_components():
+def test_components(latent_dim=100, image_length=128):
 
     
     # Test Generator
-    placeholder = tf.placeholder(dtype=tf.float32, shape=(None,200))
+    placeholder = tf.placeholder(dtype=tf.float32, shape=(None,latent_dim))
     gen = get_generator_model(placeholder, tf.AUTO_REUSE)
 
     # Test Discriminator
-    placeholder = tf.placeholder(dtype=tf.float32, shape=(None,256,256,3))
-    placeholder2 = tf.placeholder(dtype=tf.float32, shape=(None,200))
+    placeholder = tf.placeholder(dtype=tf.float32, shape=(None,image_length,image_length,3))
+    placeholder2 = tf.placeholder(dtype=tf.float32, shape=(None,latent_dim))
     dis = get_discriminator_model(placeholder, placeholder2,tf.AUTO_REUSE)
     
     # Test Encoder
-    placeholder = tf.placeholder(dtype=tf.float32, shape=(None,256,256,3))
-    en = get_encoder_model(placeholder, latent_dimensions=200, reuse=tf.AUTO_REUSE)
+    placeholder = tf.placeholder(dtype=tf.float32, shape=(None,image_length,image_length,3))
+    en = get_encoder_model(placeholder, latent_dimensions=latent_dim, reuse=tf.AUTO_REUSE)
 
     
     tf.reset_default_graph()

@@ -196,9 +196,9 @@ def load_and_normalize(image_names):
         return normalize(np.asarray([cv2.imread(name) for name in image_names]))
 
 
-def conv_out(i, k, s, p=None):
-    if p is None:
-        p = int((k-1)/2)
-    o = int((i-k + 2*p)/s + 1)
-    print(o, p)
+def conv_out(input_size, kernel, stride, padding=None):
+    if padding is None:
+        padding = int((kernel-1)/2)
+    o = int((input_size-kernel + 2*padding)/stride + 1)
+    print(o, padding)
    
